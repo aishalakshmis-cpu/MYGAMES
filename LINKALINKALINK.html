@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scam Defense: The Deception Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Handjet:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Handjet', monospace;
+            font-weight: 400;
+            background: #ffffff;
+            color: #333333;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: #ffffff;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        
+        /* Intro sequence styles */
+        #introContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .character-container {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: slideIn 0.8s ease-out;
+        }
+        
+        .character-shape {
+            width: 25vw;
+            height: 25vw;
+            min-width: 150px;
+            min-height: 150px;
+            max-width: 350px;
+            max-height: 350px;
+            margin-bottom: 10px;
+            position: relative;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .friend-character {
+            background-image: url('Artboard 1.png');
+        }
+        
+        .player-character {
+            background-image: url('Artboard 2.png');
+        }
+        
+        .character-name {
+            color: #333;
+            font-size: 18px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+        }
+        
+        .friend-container {
+            left: 10%;
+            top: 40%;
+        }
+        
+        .player-container {
+            right: 10%;
+            top: 40%;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .speech-bubble {
+            position: absolute;
+            background: #fff;
+            color: #333;
+            /* Adjusted padding to be proportionally larger but not too big */
+            padding: 1.5vw;
+            border: 2px solid #000;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            /* Adjusted max-width to be smaller */
+            max-width: 25vw;
+            font-family: 'Handjet', monospace;
+            font-weight: 400;
+            /* Adjusted font-size to be smaller */
+            font-size: 1.2vw;
+            animation: bubbleAppear 0.6s ease-out;
+            /* Adjusted position to be closer to the head */
+            top: -10vh;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 1024px) {
+            .speech-bubble {
+                max-width: 35vw; /* Adjust for tablet */
+                padding: 2.5vw;
+                font-size: 2vw;
+                top: -8vh; /* Adjust top position */
+            }
+        }
+
+        @media (max-width: 600px) {
+            .speech-bubble {
+                max-width: 65vw; /* Adjust for mobile */
+                padding: 3vw;
+                font-size: 3vw;
+                top: -6vh; /* Adjust top position */
+            }
+        }
+        
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border: 12px solid transparent;
+        }
+        
+        .friend-bubble {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .friend-bubble::after {
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-top-color: #000;
+            border-bottom: 0;
+        }
+        
+        .player-bubble {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .player-bubble::after {
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-top-color: #000;
+            border-bottom: 0;
+        }
+        
+        @keyframes bubbleAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        
+        .dialogue-choice {
+            display: block;
+            margin: 8px 0;
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border: 2px solid #000;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-family: 'Handjet', monospace;
+            font-weight: 400;
+        }
+        
+        .dialogue-choice:hover {
+            background: #e0e0e0;
+            border-color: #2196F3;
+            transform: translateY(-2px);
+        }
+        
+        .floating-link {
+            position: absolute;
+            background: #ff4444;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.4);
+            animation: floatAndGlow 2s infinite alternate;
+            z-index: 1001;
+        }
+        
+        @keyframes floatAndGlow {
+            from {
+                transform: translateY(0px) rotate(-2deg);
+                box-shadow: 0 4px 15px rgba(255, 68, 68, 0.4);
+            }
+            to {
+                transform: translateY(-10px) rotate(2deg);
+                box-shadow: 0 8px 25px rgba(255, 68, 68, 0.6);
+            }
+        }
+        
+        @keyframes linkFlyOut {
+            from {
+                opacity: 0;
+                transform: translateX(-100px) scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+        
+        .link-fly-animation {
+            animation: linkFlyOut 1s ease-out;
+        }
+        
+        .popup-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1002;
+        }
+        
+        .popup-message {
+            background: #fff;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 400px;
+            font-family: 'Handjet', monospace;
+            font-weight: 400;
+        }
+        
+        .popup-btn {
+            padding: 10px 20px;
+            margin-top: 15px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .popup-btn:hover {
+            background: #1976D2;
+        }
+        
+        /* Original game styles */
+        .popup {
+            position: absolute;
+            border: 3px solid #ff0000;
+            background: #ffff00;
+            color: #000;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            font-family: 'Handjet', monospace;
+            font-weight: 400;
+            z-index: 1000;
+            animation: shake 0.5s infinite;
+        }
+        
+        .popup.safe {
+            border-color: #00ff00;
+            background: #f0fff0;
+        }
+        
+        /* New aggressive virus pop-up styling */
+        .popup.virus {
+            background: #ff0000;
+            color: #fff;
+            animation: glitch 0.1s infinite;
+            border-color: #ffcc00;
+            box-shadow: 0 0 25px 10px rgba(255, 0, 0, 0.8);
+            padding: 10px;
+        }
+        
+        .popup.virus h3, .popup.virus p {
+            font-size: 1.5rem;
+            text-shadow: 2px 2px #000;
+        }
+
+        .popup.chaos {
+            background: #ffdb58; /* Mustard yellow */
+            color: #333;
+            border-color: #e6b800;
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        /* New styles for correct, hidden pop-ups in Level 3 */
+        .popup.correct-tab {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            border: 2px solid #2E8B57; /* Darker green border */
+            width: 150px; /* Small size */
+            height: 80px;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            z-index: 50; /* Lower z-index to be hidden behind others */
+            animation: none; /* No shake or glitch */
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+        }
+        
+        .popup.correct-tab h3, .popup.correct-tab p {
+            font-size: 12px;
+            text-align: center;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translate(0); }
+            25% { transform: translate(-2px, 2px); }
+            75% { transform: translate(2px, -2px); }
+        }
+        
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            margin: 10px;
+            border: 2px solid #333;
+            background: linear-gradient(#fff, #ddd);
+            color: #333;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: 700;
+            font-family: 'Handjet', monospace;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(#eee, #ccc);
+        }
+        
+        .btn.danger {
+            background: linear-gradient(#ff6666, #ff4444);
+            color: white;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border: 2px solid #666;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 500;
+        }
+        
+        #gameTitle {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Handjet', monospace;
+            color: #ff0000;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+            z-index: 500;
+            text-transform: uppercase;
+        }
+        
+        .fake-browser {
+            position: absolute;
+            top: 50px;
+            left: 100px;
+            width: 600px;
+            height: 400px;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 8px 8px 0 0;
+            font-family: Arial, sans-serif;
+            color: #000;
+            z-index: 100;
+        }
+        
+        .fake-browser-header {
+            height: 40px;
+            background: linear-gradient(#e0e0e0, #d0d0d0);
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .fake-close-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff5f5f;
+            border: none;
+            margin-left: auto;
+            cursor: pointer;
+        }
+        
+        .fake-address-bar {
+            background: white;
+            height: 30px;
+            margin: 5px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 14px;
+        }
+        
+        .screen-glitch {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 0, 0, 0.1) 2px,
+                rgba(255, 0, 0, 0.1) 4px
+            );
+            pointer-events: none;
+            z-index: 2000;
+            animation: glitch-screen 0.1s infinite;
+        }
+        
+        @keyframes glitch-screen {
+            0% { transform: translate(0); }
+            20% { transform: translate(-1px, 1px); }
+            40% { transform: translate(-1px, -1px); }
+            60% { transform: translate(1px, 1px); }
+            80% { transform: translate(1px, -1px); }
+            100% { transform: translate(0); }
+        }
+        
+        /* Website collapse animations */
+        @keyframes fallAndCrumble {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            30% {
+                transform: translateY(200px) rotate(15deg) scale(0.9);
+                opacity: 0.8;
+            }
+            60% {
+                transform: translateY(400px) rotate(-10deg) scale(0.7);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(800px) rotate(45deg) scale(0.3);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fallLeft {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(300px) translateX(-100px) rotate(-25deg);
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(800px) translateX(-200px) rotate(-90deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fallRight {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(300px) translateX(100px) rotate(25deg);
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(800px) translateX(200px) rotate(90deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes crumbleInPlace {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            25% {
+                transform: scale(0.9) rotate(5deg);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(0.7) rotate(-10deg);
+                opacity: 0.6;
+            }
+            75% {
+                transform: scale(0.4) rotate(15deg);
+                opacity: 0.3;
+            }
+            100% {
+                transform: scale(0.1) rotate(180deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes bounceAndFall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            20% {
+                transform: translateY(-30px) rotate(10deg);
+                opacity: 0.9;
+            }
+            40% {
+                transform: translateY(50px) rotate(-15deg);
+                opacity: 0.8;
+            }
+            60% {
+                transform: translateY(200px) rotate(25deg);
+                opacity: 0.6;
+            }
+            80% {
+                transform: translateY(400px) rotate(-35deg);
+                opacity: 0.4;
+            }
+            100% {
+                transform: translateY(800px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        .collapse-element {
+            z-index: 9999 !important;
+            pointer-events: none;
+        }
+        
+        .fake-ui-element {
+            position: absolute;
+            background: linear-gradient(45deg, #333, #666);
+            border: 2px solid #999;
+            border-radius: 5px;
+            z-index: 500;
+        }
+        
+        /* Story title styles */
+        #storyTitle {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 4vw;
+            min-font-size: 24px;
+            max-font-size: 48px;
+            font-weight: 700;
+            font-family: 'Handjet', monospace;
+            color: #ff0000;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            z-index: 1001;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            #storyTitle {
+                font-size: 6vw;
+                top: 8%;
+            }
+        }
+
+        .exit-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff0000;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .exit-btn:hover {
+            background: #cc0000;
+        }
+
+        /* Correct exit button for chaos phase */
+        .correct-exit-btn {
+            position: fixed;
+            z-index: 9999;
+            width: 30px;
+            height: 30px;
+            background: #00ff00;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 10px #00ff00;
+            transition: all 0.2s ease-in-out;
+            font-size: 1.5rem;
+        }
+
+        .correct-exit-btn:hover {
+            background: #00cc00;
+            box-shadow: 0 0 15px 5px #00ff00;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Intro sequence container -->
+        <div id="introContainer">
+            <!-- Story Title -->
+            <div id="storyTitle">Linkalinkalink</div>
+            
+            <!-- Friend character -->
+            <div class="character-container friend-container">
+                <div class="character-shape friend-character"></div>
+                <div class="character-name">Friend</div>
+            </div>
+            
+            <!-- Player character -->
+            <div class="character-container player-container">
+                <div class="character-shape player-character"></div>
+                <div class="character-name">Player</div>
+            </div>
+        </div>
+        
+        <div id="gameTitle">SCAM DEFENSE: Trust Nothing</div>
+        
+        <div id="hud">
+            <div>Level: <span id="levelNum">1</span></div>
+            <div>Lives: <span id="lives">3</span></div>
+            <div>Score: <span id="score">0</span></div>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script>
+        class ScamDefenseGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                
+                this.level = 1;
+                this.lives = 3;
+                this.score = 0;
+                this.gameState = 'intro'; // Start with intro instead of 'playing'
+                this.popups = [];
+                this.glitchEffects = [];
+                this.currentLevelData = null;
+                
+                // Intro sequence state
+                this.introStep = 0;
+                this.currentDialogue = null;
+                
+                this.setupEventListeners();
+                this.startIntroSequence(); // Start with intro
+                this.gameLoop();
+            }
+            
+            setupEventListeners() {
+                // The handleClick method was not defined, so we remove the event listener that was
+                // causing a TypeError. All other event handling is done via inline onclick attributes.
+                window.addEventListener('resize', () => this.resize());
+            }
+            
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+            
+            // New intro sequence methods
+            startIntroSequence() {
+                this.gameState = 'intro';
+                this.introStep = 0;
+                
+                // Show characters first
+                setTimeout(() => {
+                    this.showFriendMessage1();
+                }, 1000);
+            }
+            
+            showFriendMessage1() {
+                this.introStep = 1;
+                const friendContainer = document.querySelector('.friend-container');
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'speech-bubble friend-bubble';
+                bubble.innerHTML = 'dude theres this cool new modded whatsapp app. it lets u see whether your ex stalked you.';
+                
+                friendContainer.appendChild(bubble);
+                
+                // Show player choices after friend message
+                setTimeout(() => {
+                    this.showPlayerChoices1();
+                }, 2000);
+            }
+            
+            showPlayerChoices1() {
+                this.introStep = 2;
+                const playerContainer = document.querySelector('.player-container');
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'speech-bubble player-bubble';
+                bubble.innerHTML = `
+    <div class="dialogue-choice" onclick="game.selectDialogue(&quot;damn fr&quot;)">damn fr</div>
+    <div class="dialogue-choice" onclick="game.selectDialogue(&quot;i think its fake brah&quot;)">i think its fake brah</div>
+`;
+                playerContainer.appendChild(bubble);
+            }
+            
+            selectDialogue(choice) {
+                if (this.introStep === 2) {
+                    // Remove player choices
+                    const playerBubble = document.querySelector('.player-bubble');
+                    if (playerBubble) playerBubble.remove();
+                    
+                    // Show friend follow-up
+                    setTimeout(() => {
+                        this.showFriendMessage2();
+                    }, 500);
+                } else if (this.introStep === 4) {
+                    if (choice === 'install it') {
+                        this.startMainGame();
+                    } else if (choice === 'NAH') {
+                        this.showNahPopup();
+                    }
+                }
+            }
+            
+            showFriendMessage2() {
+                this.introStep = 3;
+                const friendContainer = document.querySelector('.friend-container');
+                
+                // Remove old bubble first
+                const oldBubble = friendContainer.querySelector('.speech-bubble');
+                if (oldBubble) oldBubble.remove();
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'speech-bubble friend-bubble';
+                bubble.innerHTML = 'fr man!! here check it out.';
+                
+                friendContainer.appendChild(bubble);
+                
+                // Show floating link
+                setTimeout(() => {
+                    this.showFloatingLink();
+                }, 1500);
+
+                // Friend leaves screen
+                setTimeout(() => {
+                    friendContainer.style.animation = 'slideOut 0.8s ease-in forwards';
+                    friendContainer.style.animationFillMode = 'forwards';
+                }, 2000);
+
+                // Add slideOut animation
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes slideOut {
+                        from {
+                            opacity: 1;
+                            transform: translateX(0);
+                        }
+                        to {
+                            opacity: 0;
+                            transform: translateX(-100px);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+
+                // Show final player choices
+                setTimeout(() => {
+                    this.showFinalPlayerChoices();
+                }, 3000);
+            }
+            
+            showFloatingLink() {
+                const link = document.createElement('div');
+                link.className = 'floating-link link-fly-animation';
+                link.innerHTML = '🔗 ModdedWhatsApp.apk';
+                link.style.left = '40%';
+                link.style.top = '50%';
+                // New: Add onclick event to the link to start the game
+                link.onclick = () => this.startMainGame();
+                document.getElementById('introContainer').appendChild(link);
+            }
+            
+            showFinalPlayerChoices() {
+                this.introStep = 4;
+                const playerContainer = document.querySelector('.player-container');
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'speech-bubble player-bubble';
+                bubble.innerHTML = `
+                    <div class="dialogue-choice" onclick="game.selectDialogue(&quot;install it&quot;)">install it</div>
+                    <div class="dialogue-choice" onclick="game.selectDialogue(&quot;NAH&quot;)">NAH</div>
+                `;
+                playerContainer.appendChild(bubble);
+            }
+            
+            showNahPopup() {
+                const overlay = document.createElement('div');
+                overlay.className = 'popup-overlay';
+                overlay.innerHTML = `
+                    <div class="popup-message">
+                        <h3>just click the damn link to proceed the game.</h3>
+                        <button class="popup-btn" onclick="game.closeNahPopup()">OK</button>
+                    </div>
+                `;
+                document.getElementById('introContainer').appendChild(overlay);
+            }
+
+            closeNahPopup() {
+                const overlay = document.querySelector('.popup-overlay');
+                if (overlay) overlay.remove();
+                // Keep the choices visible - they're already there
+            }
+
+            startMainGame() {
+                // Hide intro container
+                document.getElementById('introContainer').style.display = 'none';
+
+                // Start the original game flow
+                this.gameState = 'playing';
+                this.startLevel();
+            }
+
+            // Original game methods continue here...
+            startLevel() {
+                this.popups.forEach(p => p.remove());
+                this.popups = [];
+                this.glitchEffects = [];
+                document.getElementById('levelNum').textContent = this.level;
+                
+                // Clear any existing popups
+                const existingPopups = document.querySelectorAll('.popup');
+                existingPopups.forEach(popup => popup.remove());
+                
+                setTimeout(() => {
+                    this.loadLevel(this.level);
+                }, 1000);
+            }
+            
+            loadLevel(levelNum) {
+                switch(levelNum) {
+                    case 1:
+                        this.createLevel1();
+                        break;
+                    case 2:
+                        this.createLevel2();
+                        break;
+                    case 3:
+                        this.createLevel3();
+                        break;
+                    case 4:
+                        this.createLevel4();
+                        break;
+                    case 5:
+                        this.createLevel5();
+                        break;
+                    default:
+                        this.createRandomLevel();
+                }
+            }
+
+            createLevel1() {
+                // Simple choice: One real NEXT button, one fake
+                this.showMessage("Click NEXT to continue...", 2000);
+                
+                setTimeout(() => {
+                    this.createPopup({
+                        x: 300,
+                        y: 300,
+                        content: `
+                            <h3>Welcome to the Internet!</h3>
+                            <p>Click NEXT to continue your journey</p>
+                            <div class="btn" onclick="game.trapClicked('fake_next')">NEXT</div>
+                            <div class="btn" onclick="game.correctChoice()">Continue</div>
+                        `,
+                        type: 'neutral'
+                    });
+                }, 2000);
+            }
+
+            createLevel2() {
+                // Fake prize pop-up
+                this.showMessage("You've won a new phone!", 2000);
+                setTimeout(() => {
+                    this.createPopup({
+                        x: 150,
+                        y: 100,
+                        content: `
+                            <h3>CONGRATULATIONS!</h3>
+                            <p>You have won a free iPhone 15!</p>
+                            <p>Click here to claim your prize!</p>
+                            <div class="btn danger" onclick="game.trapClicked('fake_prize')">CLAIM NOW</div>
+                            <div class="btn" onclick="game.correctChoice()">Close</div>
+                        `,
+                        type: 'virus'
+                    });
+                }, 2000);
+            }
+
+            createLevel3() {
+                // New: Maximum chaos phase with hidden green tabs
+                this.showMessage("Too many tabs open... which one is real?", 2000);
+                
+                setTimeout(() => {
+                    const numFakePopups = 25; // A large number to clutter the screen
+                    const popupsToCreate = [];
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+
+                    // Create a large number of fake, chaotic pop-ups
+                    for (let i = 0; i < numFakePopups; i++) {
+                        const x = Math.random() * (viewportWidth - 250);
+                        const y = Math.random() * (viewportHeight - 200);
+                        const content = `<h3>🚨 VIRUS ALERT 🚨</h3><p>Your computer is at risk!</p><div class="btn danger" onclick="game.trapClicked('fake')">Fix Now</div>`;
+                        const type = Math.random() > 0.5 ? 'virus' : 'chaos';
+                        popupsToCreate.push({ x, y, content, type });
+                    }
+
+                    // Place a few correct, hidden pop-ups among the chaos
+                    const numCorrectPopups = 2;
+                    for (let i = 0; i < numCorrectPopups; i++) {
+                        const x = Math.random() * (viewportWidth - 160);
+                        const y = Math.random() * (viewportHeight - 90);
+                        const content = `<p>All popups are fake scareware.</p><div class="btn" onclick="game.correctChoice()">Ignore & Continue</div>`;
+                        const type = 'correct-tab';
+                        popupsToCreate.push({ x, y, content, type });
+                    }
+
+                    // Shuffle the popups to ensure correct ones are randomly placed and potentially hidden
+                    popupsToCreate.sort(() => Math.random() - 0.5);
+
+                    // Create all the popups
+                    popupsToCreate.forEach(p => this.createPopup(p));
+
+                }, 2000);
+            }
+
+            createLevel4() {
+                this.showMessage("Login to your account... or don't?", 2000);
+                
+                setTimeout(() => {
+                    this.createPopup({
+                        x: 300,
+                        y: 250,
+                        content: `
+                            <h3>Login Required</h3>
+                            <p>Enter your credentials:</p>
+                            <input type="text" placeholder="Username" style="display: block; margin: 5px 0; padding: 5px;">
+                            <input type="password" placeholder="Password" style="display: block; margin: 5px 0; padding: 5px;" 
+                                   onkeypress="game.trapClicked('fake_login')">
+                            <div class="btn" onclick="game.trapClicked('fake_submit')">Submit</div>
+                            <p style="font-size: 10px; margin-top: 20px; cursor: pointer; text-decoration: underline;"
+                               onclick="game.correctChoice()">Skip login (guest mode)</p>
+                        `,
+                        type: 'neutral'
+                    });
+                }, 2000);
+            }
+            
+            createLevel5() {
+                this.showMessage("FINAL LEVEL: Maximum Chaos!", 2000);
+                setTimeout(() => {
+                    // Chaos mode - multiple scam types
+                    this.createFakeAntivirus();
+                    this.createFakeDownload();
+                    this.createFakePrize();
+                    setTimeout(() => {
+                        this.createPopup({
+                            x: 50,
+                            y: 50,
+                            content: `
+                                <h3>🎯 LEVEL COMPLETE</h3>
+                                <p>You've learned to spot scams!</p>
+                                <div class="btn" onclick="game.winGame()">Finish Game</div>
+                            `,
+                            type: 'safe'
+                        });
+                    }, 5000);
+                }, 2000);
+            }
+
+            createFakeAntivirus() {
+                this.createPopup({
+                    x: Math.random() * 400,
+                    y: Math.random() * 300,
+                    content: `
+                        <h3>🛡️ ANTIVIRUS SCAN</h3>
+                        <div style="background: #000; color: #0f0; padding: 10px; font-family: monospace;">
+                            Scanning... 47% complete<br>
+                            Threats found: 2847
+                        </div>
+                        <div class="btn danger" onclick="game.trapClicked('fake_antivirus')">Remove Threats ($99.99)</div>
+                    `,
+                    type: 'virus'
+                });
+            }
+
+            createFakeDownload() {
+                this.createPopup({
+                    x: Math.random() * 400 + 400,
+                    y: Math.random() * 300 + 100,
+                    content: `
+                        <h3>💾 FILE DOWNLOAD</h3>
+                        <p>Your download is ready. Click to start.</p>
+                        <div class="btn danger" onclick="game.trapClicked('fake_download')">Download Now</div>
+                        <p style="font-size: 10px;">Not all downloads are safe.</p>
+                    `,
+                    type: 'neutral'
+                });
+            }
+
+            createFakePrize() {
+                 this.createPopup({
+                    x: Math.random() * 300 + 150,
+                    y: Math.random() * 400 + 50,
+                    content: `
+                        <h3>🎉 YOU'VE WON!</h3>
+                        <p>You are our 1,000,000th visitor!</p>
+                        <p>Claim your prize now.</p>
+                        <div class="btn danger" onclick="game.trapClicked('fake_prize')">CLICK HERE</div>
+                    `,
+                    type: 'virus'
+                });
+            }
+
+            createRandomLevel() {
+                const levels = [
+                    this.createLevel1,
+                    this.createLevel2,
+                    this.createLevel3,
+                    this.createLevel4
+                ];
+                const randomLevel = levels[Math.floor(Math.random() * levels.length)];
+                randomLevel.call(this);
+            }
+            
+            createPopup({ x, y, content, type, width, height }) {
+                const popup = document.createElement('div');
+                popup.className = `popup ${type}`;
+                popup.style.left = `${x}px`;
+                popup.style.top = `${y}px`;
+                if (width) popup.style.width = `${width}px`;
+                if (height) popup.style.height = `${height}px`;
+                popup.innerHTML = content;
+                document.getElementById('gameContainer').appendChild(popup);
+                this.popups.push(popup);
+            }
+            
+            showMessage(text, duration) {
+                const message = document.createElement('div');
+                message.className = 'popup-overlay';
+                message.innerHTML = `
+                    <div class="popup-message">
+                        <h3>${text}</h3>
+                    </div>
+                `;
+                document.getElementById('gameContainer').appendChild(message);
+                
+                setTimeout(() => {
+                    message.remove();
+                }, duration);
+            }
+
+            loseLife() {
+                this.lives--;
+                document.getElementById('lives').textContent = this.lives;
+                
+                if (this.lives <= 0) {
+                    this.gameOver();
+                } else {
+                    this.showMessage("Wrong choice! You lose a life.", 1500);
+                    setTimeout(() => this.startLevel(), 2000);
+                }
+            }
+
+            correctChoice() {
+                this.score += 100;
+                document.getElementById('score').textContent = this.score;
+                
+                this.popups.forEach(p => p.remove());
+                this.popups = [];
+                
+                this.level++;
+                this.showMessage("Correct! On to the next level.", 1500);
+                setTimeout(() => this.startLevel(), 2000);
+            }
+            
+            trapClicked(trapType) {
+                this.addGlitch();
+                this.popups.forEach(p => {
+                    if (p.className.includes('safe')) {
+                        p.classList.add('collapse-element');
+                        p.style.animation = 'fallAndCrumble 1s forwards';
+                    } else if (p.className.includes('virus')) {
+                        p.classList.add('collapse-element');
+                        p.style.animation = 'bounceAndFall 1.5s forwards';
+                    } else {
+                        const randomAnim = ['fallLeft', 'fallRight', 'crumbleInPlace'];
+                        const anim = randomAnim[Math.floor(Math.random() * randomAnim.length)];
+                        p.classList.add('collapse-element');
+                        p.style.animation = `${anim} 1s forwards`;
+                    }
+                });
+                
+                setTimeout(() => {
+                    this.loseLife();
+                }, 1000);
+            }
+            
+            addGlitch() {
+                const glitch = document.createElement('div');
+                glitch.className = 'screen-glitch';
+                document.getElementById('gameContainer').appendChild(glitch);
+                this.glitchEffects.push(glitch);
+                
+                setTimeout(() => {
+                    glitch.remove();
+                    this.glitchEffects = this.glitchEffects.filter(g => g !== glitch);
+                }, 1500);
+            }
+
+            gameOver() {
+                this.gameState = 'gameOver';
+                this.popups.forEach(p => p.remove());
+                this.glitchEffects.forEach(g => g.remove());
+                
+                const message = document.createElement('div');
+                message.className = 'popup-overlay';
+                message.innerHTML = `
+                    <div class="popup-message">
+                        <h2>GAME OVER</h2>
+                        <p>Your final score: ${this.score}</p>
+                        <p>Final level reached: ${this.level}</p>
+                        <button class="popup-btn" onclick="game.startExitTrap()">Play Again</button>
+                    </div>
+                `;
+                document.getElementById('gameContainer').appendChild(message);
+            }
+            
+            winGame() {
+                 this.gameState = 'win';
+                 this.popups.forEach(p => p.remove());
+                 this.glitchEffects.forEach(g => g.remove());
+                 const message = document.createElement('div');
+                 message.className = 'popup-overlay';
+                 message.innerHTML = `
+                     <div class="popup-message">
+                         <h2>YOU WIN!</h2>
+                         <p>Congratulations, you are a scam defense master!</p>
+                         <p>Your final score: ${this.score}</p>
+                         <button class="popup-btn" onclick="game.startExitTrap()">Play Again</button>
+                     </div>
+                 `;
+                 document.getElementById('gameContainer').appendChild(message);
+            }
+            
+            gameLoop() {
+                requestAnimationFrame(() => this.gameLoop());
+                
+                if (this.gameState === 'playing') {
+                    // Update and draw game state if needed
+                }
+            }
+
+            startExitTrap() {
+                this.gameState = 'exitTrap';
+                // Clear any existing overlays
+                const overlays = document.querySelectorAll('.popup-overlay');
+                overlays.forEach(o => o.remove());
+
+                // Animate UI elements collapsing
+                document.getElementById('gameTitle').style.animation = 'fallAndCrumble 1.5s forwards';
+                document.getElementById('hud').style.animation = 'fallRight 1.5s forwards';
+
+                // Simultaneously, create a flurry of fake popups
+                const minPopups = 10;
+                const maxPopups = 30;
+                const area = window.innerWidth * window.innerHeight;
+                const numPopups = Math.max(minPopups, Math.min(maxPopups, Math.floor(area / 30000)));
+
+                const fakePopupContent = [
+                    "You have a virus!",
+                    "System Critical Error!",
+                    "Unauthorized Access Detected!",
+                    "Malware Alert!",
+                    "WARNING: Your PC is at Risk!"
+                ];
+                
+                for (let i = 0; i < numPopups; i++) {
+                    const x = Math.random() * (window.innerWidth - 300);
+                    const y = Math.random() * (window.innerHeight - 200);
+                    const width = 150 + Math.random() * 100;
+                    const height = 100 + Math.random() * 75;
+                    const randomContent = fakePopupContent[Math.floor(Math.random() * fakePopupContent.length)];
+                    this.createPopup({
+                        x,
+                        y,
+                        width,
+                        height,
+                        content: `<h3>${randomContent}</h3><div class="btn" onclick="game.handleWrongExit()">OK</div>`,
+                        type: Math.random() > 0.5 ? 'virus' : 'chaos'
+                    });
+                }
+                
+                // Add the ONE correct exit button
+                setTimeout(() => {
+                    const correctExit = document.createElement('div');
+                    correctExit.className = 'correct-exit-btn';
+                    correctExit.innerHTML = 'X';
+                    correctExit.onclick = () => this.handleCorrectExit();
+
+                    const corners = ['top', 'bottom', 'left', 'right'];
+                    const placement = corners[Math.floor(Math.random() * corners.length)];
+
+                    if (placement.includes('top')) {
+                        correctExit.style.top = '10px';
+                    } else {
+                        correctExit.style.bottom = '10px';
+                    }
+                    if (placement.includes('left')) {
+                        correctExit.style.left = '10px';
+                    } else {
+                        correctExit.style.right = '10px';
+                    }
+
+                    document.body.appendChild(correctExit);
+                    this.popups.push(correctExit);
+                    this.showMessage("Welcome to the real game. Find the right exit.", 3000);
+                }, 2000);
+            }
+
+            handleWrongExit() {
+                this.addGlitch();
+                this.popups.forEach(p => p.remove());
+                this.popups = [];
+                this.showMessage("False start! Try again.", 1500);
+                setTimeout(() => location.reload(), 2000);
+            }
+            
+            handleCorrectExit() {
+                this.popups.forEach(p => p.remove());
+                this.popups = [];
+                this.addGlitch();
+                const message = document.createElement('div');
+                message.className = 'popup-overlay';
+                message.innerHTML = `
+                    <div class="popup-message">
+                        <h2>Congrats, you won!</h2>
+                        <p>You get $5 million (just kidding).</p>
+                        <button class="popup-btn" onclick="location.reload()">Actually Play Again</button>
+                    </div>
+                `;
+                document.getElementById('gameContainer').appendChild(message);
+            }
+
+        }
+        
+        let game;
+        window.onload = function() {
+            game = new ScamDefenseGame();
+        };
+    </script>
+</body>
+</html>

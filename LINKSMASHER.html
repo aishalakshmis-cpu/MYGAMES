@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scam Defense: The Deception Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Handjet:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+New:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Handjet', cursive;
+            background: #ffffff;
+            color: #333333;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: #ffffff;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        
+        /* Intro sequence styles */
+        #introContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .intro-text {
+            white-space: pre;
+            /* Responsive font size using clamp() */
+            font-size: clamp(1.5rem, 4vw, 2.5rem); 
+            line-height: 1.5;
+            text-align: left;
+            margin-bottom: 2rem;
+            max-width: 80%;
+            overflow: hidden;
+            color: #555555;
+            transition: color 0.5s ease-in-out;
+            cursor: pointer;
+            font-family: 'Handjet', cursive;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .intro-text.active {
+            color: #333333;
+        }
+        
+        .intro-text::after {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            /* Adjust blinker height to match current font size */
+            height: 1.4rem; 
+            background: #333333;
+            animation: blink 1s step-end infinite;
+        }
+        
+        .intro-button {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            background: #333333;
+            color: #ffffff;
+            border: 2px solid #333333;
+            cursor: pointer;
+            transition: background 0.3s ease, color 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-family: 'Handjet', cursive;
+        }
+        
+        .intro-button:hover {
+            background: #ffffff;
+            color: #333333;
+        }
+        
+        .skip-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.8rem;
+            background: transparent;
+            color: #999999;
+            border: 1px solid #999999;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Handjet', cursive;
+            display: none; /* Initially hidden */
+        }
+        
+        .skip-button:hover {
+            color: #333333;
+            border-color: #333333;
+        }
+        
+        @keyframes blink {
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        /* Game UI Styles */
+        #uiOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicks to pass through to the canvas */
+        }
+        
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #f0f0f0;
+            border: 2px solid #333333;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 100;
+            text-align: center;
+            pointer-events: all; /* Make the box clickable */
+            width: 300px;
+            font-size: 1.2rem;
+        }
+
+        .message-box-button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #333333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: 'Handjet', cursive;
+            font-size: 1.2rem;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="introContainer">
+            <div id="introText" class="intro-text"></div>
+            <button id="startButton" class="intro-button" style="display:none;">Start Defense</button>
+            <button id="skipButton" class="skip-button">Skip</button>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="uiOverlay"></div>
+    </div>
+
+    <script>
+        class ScamDefenseGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.uiOverlay = document.getElementById('uiOverlay');
+                this.introContainer = document.getElementById('introContainer');
+                this.introTextElement = document.getElementById('introText');
+                this.startButton = document.getElementById('startButton');
+                this.skipButton = document.getElementById('skipButton');
+
+                this.gameState = 'intro';
+                this.score = 0;
+                this.health = 100;
+                this.scams = [];
+                this.particles = [];
+                this.messageQueue = [];
+                this.currentMessage = null;
+                this.introTextIndex = 0;
+                this.typingInterval = null;
+
+                this.introLines = [
+                    "INITIATING DIGITAL DEFENSE PROTOCOL...",
+                    "YOU ARE A NETWORK ADMINISTRATOR FOR A GLOBAL DATA HUB.",
+                    "YOUR MISSION IS TO DEFEND AGAINST A BARRAGE OF DIGITAL DECEPTIONS.",
+                    "PHISHING ATTEMPTS, MALWARE DISGUISED AS ADS, FAKE ALERTS...",
+                    "IDENTIFY AND NEUTRALIZE THEM BEFORE THEY COMPROMISE THE SYSTEM.",
+                    "USE YOUR CURSOR AS YOUR PRIMARY TOOL.",
+                    "LEFT-CLICK TO ENGAGE WITH LEGITIMATE DATA PACKETS.",
+                    "RIGHT-CLICK TO DELETE MALICIOUS CODE AND FRAUDULENT LINKS.",
+                    "BE VIGILANT. THE ATTACKS ARE POLYMORPHIC AND RELENTLESS.",
+                    "READY? THE SYSTEM IS NOW ONLINE."
+                ];
+
+                this.scamTypes = [
+                    {
+                        text: "WINNER! Click here to claim your prize!",
+                        type: "clickbait",
+                        color: "#ff6347",
+                        value: -10, // Lose score
+                        damage: 20
+                    },
+                    {
+                        text: "Critical Security Alert! Click to scan your PC now.",
+                        type: "fake_alert",
+                        color: "#ffd700",
+                        value: -15,
+                        damage: 30
+                    },
+                    {
+                        text: "Urgent! Your account password has expired. Renew it here.",
+                        type: "phishing",
+                        color: "#4682b4",
+                        value: -20,
+                        damage: 40
+                    },
+                    {
+                        text: "Package delivery failed. Track your parcel here.",
+                        type: "phishing_link",
+                        color: "#9932cc",
+                        value: -25,
+                        damage: 50
+                    },
+                    {
+                        text: "You have a virus! Download our anti-virus to remove it.",
+                        type: "malware",
+                        color: "#c71585",
+                        value: -30,
+                        damage: 60
+                    },
+                    {
+                        text: "Legitimate Data Packet",
+                        type: "legit",
+                        color: "#228b22",
+                        value: 5,
+                        damage: 0
+                    }
+                ];
+
+                this.initialize();
+            }
+
+            initialize() {
+                window.addEventListener('resize', () => this.resizeCanvas());
+                this.resizeCanvas();
+                this.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
+                this.startButton.addEventListener('click', () => this.startGame());
+                this.skipButton.addEventListener('click', () => this.skipIntro());
+                this.introTextElement.addEventListener('click', () => this.skipIntro()); // Added event listener for intro text
+                this.gameLoop();
+                this.startIntroSequence();
+            }
+
+            resizeCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            startIntroSequence() {
+                this.skipButton.style.display = 'block';
+                this.typeIntroText();
+            }
+            
+            skipIntro() {
+                if (this.typingInterval) {
+                    clearInterval(this.typingInterval);
+                }
+                this.introTextElement.textContent = "CLICK 'START DEFENSE' TO BEGIN.";
+                this.startButton.style.display = 'block';
+                this.skipButton.style.display = 'none';
+            }
+
+            typeIntroText() {
+                if (this.introTextIndex < this.introLines.length) {
+                    const line = this.introLines[this.introTextIndex];
+                    let charIndex = 0;
+                    this.introTextElement.classList.add('active');
+                    this.introTextElement.textContent = '';
+                    
+                    if (this.typingInterval) {
+                        clearInterval(this.typingInterval);
+                    }
+                    
+                    this.typingInterval = setInterval(() => {
+                        this.introTextElement.textContent += line[charIndex];
+                        charIndex++;
+                        if (charIndex === line.length) {
+                            clearInterval(this.typingInterval);
+                            this.introTextElement.classList.remove('active');
+                            this.introTextIndex++;
+                            setTimeout(() => this.typeIntroText(), 1500); // Wait before typing next line
+                        }
+                    }, 50); // Typing speed
+                } else {
+                    this.introTextElement.textContent = "CLICK 'START DEFENSE' TO BEGIN.";
+                    this.startButton.style.display = 'block';
+                    this.skipButton.style.display = 'none';
+                }
+            }
+
+            startGame() {
+                this.gameState = 'playing';
+                this.introContainer.style.display = 'none';
+                this.score = 0;
+                this.health = 100;
+                this.scams = [];
+                this.messageQueue = [];
+                this.spawnInterval = setInterval(() => this.spawnScam(), 1500); // Spawn every 1.5 seconds
+            }
+
+            spawnScam() {
+                const isLegit = Math.random() > 0.6;
+                const scamData = isLegit ? this.scamTypes[5] : this.scamTypes[Math.floor(Math.random() * 5)];
+                const x = Math.random() * (this.canvas.width - 200) + 100;
+                const y = Math.random() * (this.canvas.height - 200) + 100;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1 + (this.score / 500); // Speed increases with score
+                
+                // Use a temporary canvas context to measure the text width
+                const tempCtx = this.canvas.getContext('2d');
+                tempCtx.font = '15px Courier New';
+                const textWidth = tempCtx.measureText(scamData.text).width;
+                const padding = 20; // Padding for the text within the tab
+
+                this.scams.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    width: textWidth + padding,
+                    height: 30, // Fixed height for the tab
+                    text: scamData.text,
+                    type: scamData.type,
+                    color: scamData.color,
+                    value: scamData.value,
+                    damage: scamData.damage,
+                    hover: false
+                });
+            }
+
+            handleInput(e) {
+                e.preventDefault();
+                const mouseX = e.clientX;
+                const mouseY = e.clientY;
+
+                if (this.gameState === 'playing') {
+                    // Check for hit using rectangular collision
+                    const hitScam = this.scams.find(scam => {
+                        return mouseX > scam.x - scam.width / 2 &&
+                               mouseX < scam.x + scam.width / 2 &&
+                               mouseY > scam.y - scam.height / 2 &&
+                               mouseY < scam.y + scam.height / 2;
+                    });
+
+                    if (hitScam) {
+                        const isScam = hitScam.type !== 'legit';
+                        const isLeftClick = e.button === 0;
+                        const isRightClick = e.button === 2;
+
+                        if (isScam && isRightClick) {
+                            this.score += 10;
+                            this.showMessage(`+10 SCORE`, 1000);
+                            this.scams = this.scams.filter(s => s !== hitScam);
+                            this.createParticles(hitScam.x, hitScam.y, '#33cc33');
+                        } else if (!isScam && isLeftClick) {
+                            this.score += 5;
+                            this.showMessage(`+5 SCORE`, 1000);
+                            this.scams = this.scams.filter(s => s !== hitScam);
+                            this.createParticles(hitScam.x, hitScam.y, '#33cc33');
+                        } else {
+                            // Penalty for wrong action
+                            this.health -= hitScam.damage;
+                            this.showMessage(`-${hitScam.damage} HEALTH. WRONG ACTION!`, 1500);
+                            this.createParticles(hitScam.x, hitScam.y, '#ff0000');
+                            if (this.health <= 0) {
+                                this.endGame();
+                            }
+                        }
+                    } else {
+                         // Penalty for clicking empty space
+                         this.health -= 5;
+                         this.showMessage(`-5 HEALTH. MISS!`, 1000);
+                         this.createParticles(mouseX, mouseY, '#ff0000');
+                         if (this.health <= 0) {
+                             this.endGame();
+                         }
+                    }
+                }
+            }
+
+            createParticles(x, y, color) {
+                for (let i = 0; i < 10; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 5 + 1;
+                    this.particles.push({
+                        x: x,
+                        y: y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        size: Math.random() * 5 + 2,
+                        color: color,
+                        alpha: 1
+                    });
+                }
+            }
+
+            endGame() {
+                this.gameState = 'gameOver';
+                clearInterval(this.spawnInterval);
+                this.showMessage(`GAME OVER! FINAL SCORE: ${this.score}`, 5000);
+                setTimeout(() => {
+                    this.introContainer.style.display = 'flex';
+                    this.introTextElement.textContent = `GAME OVER. FINAL SCORE: ${this.score}. CLICK 'START DEFENSE' TO PLAY AGAIN.`;
+                    this.startButton.style.display = 'block';
+                }, 5500);
+            }
+
+            showMessage(text, duration) {
+                const messageBox = document.createElement('div');
+                messageBox.className = 'message-box';
+                messageBox.innerHTML = `<span>${text}</span><br><button class="message-box-button">OK</button>`;
+                this.uiOverlay.appendChild(messageBox);
+                
+                const okButton = messageBox.querySelector('.message-box-button');
+                okButton.addEventListener('click', () => {
+                    this.uiOverlay.removeChild(messageBox);
+                });
+
+                // Auto-remove after duration if OK button not clicked
+                setTimeout(() => {
+                    if (this.uiOverlay.contains(messageBox)) {
+                        this.uiOverlay.removeChild(messageBox);
+                    }
+                }, duration);
+            }
+
+            gameLoop() {
+                this.update();
+                this.draw();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+
+            update() {
+                if (this.gameState === 'playing') {
+                    // Update scams
+                    this.scams.forEach(scam => {
+                        scam.x += scam.vx;
+                        scam.y += scam.vy;
+
+                        // Bounce off walls
+                        if (scam.x + scam.width / 2 > this.canvas.width || scam.x - scam.width / 2 < 0) {
+                            scam.vx *= -1;
+                        }
+                        if (scam.y + scam.height / 2 > this.canvas.height || scam.y - scam.height / 2 < 0) {
+                            scam.vy *= -1;
+                        }
+                    });
+
+                    // Update particles
+                    this.particles.forEach((p, index) => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.alpha -= 0.02;
+                        p.size -= 0.1;
+                        if (p.alpha <= 0 || p.size <= 0) {
+                            this.particles.splice(index, 1);
+                        }
+                    });
+
+                    // Check for hover state
+                    this.scams.forEach(scam => scam.hover = false);
+                    const mouseX = this.canvas.width / 2; // Assuming mouse position for simplicity
+                    const mouseY = this.canvas.height / 2;
+                    const hoveredScam = this.scams.find(scam => {
+                        return mouseX > scam.x - scam.width / 2 &&
+                               mouseX < scam.x + scam.width / 2 &&
+                               mouseY > scam.y - scam.height / 2 &&
+                               mouseY < scam.y + scam.height / 2;
+                    });
+                    if (hoveredScam) {
+                        hoveredScam.hover = true;
+                    }
+                }
+            }
+
+            draw() {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (this.gameState === 'playing') {
+                    // Draw scams as tabs
+                    this.scams.forEach(scam => {
+                        // Draw the tab shape
+                        this.ctx.fillStyle = scam.color;
+                        this.ctx.beginPath();
+                        const radius = 8;
+                        const x = scam.x - scam.width / 2;
+                        const y = scam.y - scam.height / 2;
+                        this.ctx.moveTo(x + radius, y);
+                        this.ctx.lineTo(x + scam.width - radius, y);
+                        this.ctx.arcTo(x + scam.width, y, x + scam.width, y + radius, radius);
+                        this.ctx.lineTo(x + scam.width, y + scam.height);
+                        this.ctx.lineTo(x, y + scam.height);
+                        this.ctx.lineTo(x, y + radius);
+                        this.ctx.arcTo(x, y, x + radius, y, radius);
+                        this.ctx.closePath();
+                        this.ctx.fill();
+
+                        // Draw the text
+                        this.ctx.fillStyle = '#ffffff';
+                        this.ctx.font = '15px Courier New';
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        this.ctx.fillText(scam.text, scam.x, scam.y);
+                    });
+
+                    // Draw particles
+                    this.particles.forEach(p => {
+                        this.ctx.fillStyle = `rgba(0, 0, 0, ${p.alpha})`;
+                        this.ctx.beginPath();
+                        this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    });
+
+                    // Draw UI
+                    this.drawUI();
+                }
+            }
+
+            drawUI() {
+                // Score
+                this.ctx.fillStyle = '#333333';
+                this.ctx.font = '21px Handjet';
+                this.ctx.textAlign = 'left';
+                this.ctx.fillText(`Score: ${this.score}`, 10, 25);
+
+                // Health Bar
+                this.ctx.fillStyle = '#333333';
+                this.ctx.font = '21px Handjet';
+                this.ctx.fillText(`Health:`, 10, 50);
+                this.ctx.fillStyle = '#ff0000';
+                this.ctx.fillRect(80, 40, 100, 15);
+                this.ctx.fillStyle = '#00ff00';
+                this.ctx.fillRect(80, 40, this.health, 15);
+                this.ctx.strokeStyle = '#333333';
+                this.ctx.strokeRect(80, 40, 100, 15);
+            }
+        }
+        
+        // Start the game
+        window.onload = function() {
+            new ScamDefenseGame();
+        };
+        
+        // Prevent right-click context menu
+        document.addEventListener('contextmenu', e => e.preventDefault());
+    </script>
+</body>
+</html>

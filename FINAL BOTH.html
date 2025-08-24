@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Links as Cards</title>
+  <!-- Google Fonts: Handjet Bold -->
+  <link href="https://fonts.googleapis.com/css2?family=Handjet:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background-image: url('background-img.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      font-family: 'Handjet', Arial, sans-serif;
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-start;
+      flex-direction: row;
+      gap: 40px;
+      padding: 20px 40px 0;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.93);
+      border: 3px solid #000;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 32px 40px;
+      min-width: 180px;
+      text-align: center;
+      text-decoration: none;
+      color: #070707;
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 2px;
+      transition: box-shadow 0.3s, border 0.3s, color 0.3s;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card:hover {
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      border: 3px solid #007BFF;
+      color: #007BFF;
+    }
+  </style>
+</head>
+<body>
+  <a href="LINKALINKALINK.html" class="card" target="_blank" rel="noopener noreferrer">
+    LINKALINKALINK
+  </a>
+  <a href="LINKSMASHER.html" class="card" target="_blank" rel="noopener noreferrer">
+    LINKSMASHER
+  </a>
+</body>
+</html>
